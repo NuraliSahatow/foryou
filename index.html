@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Мост в наше лето</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    /* Стили остаются без изменений */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+      position: relative;
+    }
+    header {
+      background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+      padding: 20px;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      color: #fff;
+    }
+    main {
+      padding: 20px;
+      text-align: center;
+    }
+    .section {
+      display: none;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    .active {
+      display: block;
+    }
+    #mapContainer {
+      height: 400px;
+      margin: 20px 0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    button {
+      background: #ff69b4;
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px 0;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    input {
+      padding: 10px;
+      margin: 10px 0;
+      width: 80%;
+      max-width: 300px;
+      border: 2px solid #ff69b4;
+      border-radius: 5px;
+    }
+    #quoteSection {
+      margin: 20px 0;
+      padding: 15px;
+      background: #fff3f8;
+      border-radius: 10px;
+      min-height: 100px;
+    }
+    #quoteText {
+      font-style: italic;
+      margin: 10px 0;
+      color: #e91e63;
+    }
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    #congratulation {
+      background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .hearts {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .heart {
+      position: absolute;
+      animation: float 3s infinite;
+      opacity: 0.7;
+    }
+    @keyframes float {
+      0% { transform: translateY(0) rotate(45deg); }
+      50% { transform: translateY(-20px) rotate(45deg); }
+      100% { transform: translateY(0) rotate(45deg); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hearts" id="hearts"></div>
+    
+    <!-- Поздравление с 8 марта -->
+    <div id="congratulation" class="section active">
+      <h2>💐 С 8 Марта, моя прекрасная! 💐</h2>
+      <p>
+        Ты — самая удивительная женщина на свете!<br>
+        Спасибо, что ты есть в моей жизни!<br>
+        🌸 Твоя улыбка делает мир ярче 🌸
+      </p>
+      <button onclick="startJourney()">Принять поздравление 💖</button>
+    </div>
+
+    <!-- Основной контент -->
+    <div id="mainContent" style="display: none;">
+      <header>
+        <h1>Мост в наше лето 🌉</h1>
+      </header>
+      
+      <div id="mapContainer"></div>
+
+      <main>
+        <!-- Стартовая страница -->
+        <div id="start" class="section">
+          <p>Построим мост от Стамбула до Туркменабада через наши общие мечты!</p>
+          <button onclick="startConstruction()">Начать строительство 🛠️</button>
+        </div>
+
+        <!-- Вопросы -->
+        <div id="questions" class="section">
+          <h2>Этап строительства №<span id="currentStep">1</span></h2>
+          <div id="questionContainer"></div>
+          <input type="text" id="answerInput" placeholder="Ваш ответ...">
+          <button onclick="checkAnswer()">Продолжить ➡️</button>
+          <p id="statusText"></p>
+        </div>
+
+        <!-- Виртуальный букет -->
+        <div id="bouquetSection" class="section">
+          <h2>Собери свой букет 💐</h2>
+          <select id="flowerType">
+            <option value="🌹">Розы</option>
+            <option value="🌷">Тюльпаны</option>
+            <option value="🌸">Сакура</option>
+          </select>
+          <button onclick="createBouquet()">Создать ✨</button>
+          <div id="bouquetDisplay" style="margin: 20px 0; font-size: 2em"></div>
+          <button onclick="showSection('final')">Завершить 🎉</button>
+        </div>
+
+        <!-- Финальное сообщение -->
+        <div id="final" class="section">
+          <h2>🎉 Мост построен! 🎉</h2>
+          <div id="quoteSection">
+            <div id="quoteText"></div>
+            <div id="controls">
+              <button onclick="changeQuote()">Новая цитата 🔄</button>
+              <button onclick="showSection('bouquetSection')">Изменить букет 💐</button>
+            </div>
+          </div>
+          <p>До нашей встречи осталось: ⏳<span id="daysCounter"></span></p>
+          <button onclick="resetProgress()">Начать сначала 🔁</button>
+          <button onclick="saveAnswersToServer()">Сохранить ответы на сервер</button>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    let map, bridge;
+    const quotes = [
+      "«Ты так далеко, но я с тобой — это просто другая география» (Земфира)",
+      "«Между нами километры, между нами слова...» (Би-2)",
+      "«Расстояние — это временно, любовь — навсегда»",
+      "«Мы будем вместе, я знаю, нас не разлучат километры» (Сплин)",
+      "«Любовь — это мост через все расстояния»",
+      "«Сотри случайные черты — и ты увидишь: мир прекрасен» (Аквариум)",
+      "«Ты даришь мне свет даже в самый темный день»",
+      "«Каждый миг с тобой – это вечность счастья»",
+      "«В твоих глазах я вижу отражение своих мечтаний»",
+      "«С тобой жизнь наполняется смыслом и красотой»",
+      "«Любовь – это язык, понятный каждому сердцу»",
+      "«Ты – мое вдохновение, моя муза и моя радость»",
+      "«С тобой я учусь любить мир вокруг еще ярче»",
+      "«Ты – как утренняя роса, свежа и незабываема»",
+      "«Любовь к тебе – это путешествие без конца»",
+      "«Ты – моя звезда, освещающая мой путь»",
+      "«Каждый день с тобой – это праздник для души»",
+      "«В тебе я нашел все, чего искал в этом мире»",
+      "«Ты делаешь каждый момент моей жизни особенным»",
+      "«С тобой даже молчание звучит как музыка»",
+      "«Любовь – это когда счастье другого становится твоим»",
+      "«Ты – самый теплый и нежный лучик света»",
+      "«Ты – мое утро, день и вечер, моя вечность»",
+      "«С тобой любая буря кажется тихой и спокойной»",
+      "«Любовь — это искусство, которое мы творим вместе»",
+      "«Ты – моя любимая мелодия в ритме жизни»",
+      "«С тобой мир становится ярче и удивительнее»",
+      "«Ты — моя судьба, моя единственная и неповторимая»",
+      "«Любовь приходит, когда ты меньше всего ее ждешь»",
+      "«Ты – ответ на все мои молитвы»",
+      "«Каждый раз, когда я вижу тебя, сердце начинает петь»",
+      "«Ты – моя радость, моя мечта и моя реальность»",
+      "«С тобой я учусь верить в чудеса»",
+      "«Ты словно весенний ветер, приносящий свежесть в мою жизнь»",
+      "«Любовь – это когда два сердца бьются в унисон»",
+      "«Ты – моя вдохновляющая история, мой вечный роман»",
+      "«С тобой даже простые мгновения становятся волшебными»",
+      "«Ты — мой ангел-хранитель в мире суеты»",
+      "«Любовь – это когда ты видишь совершенство в несовершенстве»",
+      "«Ты – моя нежность, моя ласка и моя крепость»",
+      "«С тобой я понял, что такое настоящая любовь»",
+      "«Ты – мое спасение, моя надежда и мой дом»",
+      "«Любовь оживляет душу и дарит силы мечтать»",
+      "«Ты – моя звезда, ведущая меня через ночь»",
+      "«С тобой каждый день наполняется смыслом и чудесами»",
+      "«Ты – мой тихий прибой, дарующий спокойствие»",
+      "«Любовь – это чувство, которое не нуждается в объяснениях»",
+      "«Ты – моя вдохновенная поэма, моя бесконечная сказка»",
+      "«С тобой даже самые обыденные дни превращаются в чудеса»",
+      "«Ты – лучшая часть моей жизни, мое настоящее и будущее»"
+    ];
+    
+    const questions = [
+      { text: "Расскажи, какая черта в себе делает тебя по-настоящему счастливой?", answer: "" },
+      { text: "Какая книга или фильм тронули твою душу и почему?", answer: "" },
+      { text: "Какое у тебя любимое блюдо или десерт?", answer: "" },
+      { text: "Что для тебя значит утро – как ты любишь начинать свой день?", answer: "" },
+      { text: "Какие мечты и цели ты считаешь самыми важными в жизни?", answer: "" },
+      { text: "Расскажи о моменте, когда ты почувствовала настоящую любовь или счастье.", answer: "" },
+      { text: "Какой аромат или вкус тебе напоминает о самых теплых воспоминаниях?", answer: "" },
+      { text: "Что тебя вдохновляет и мотивирует в повседневной жизни?", answer: "" },
+      { text: "Как ты представляешь идеальный вечер или свидание?", answer: "" },
+      { text: "Какие традиции или ритуалы для тебя особенно значимы?", answer: "" },
+      { text: "Расскажи, что для тебя значит быть любимой и как ты это чувствуешь?", answer: "" }
+    ];
+    
+    function createHearts() {
+      const heartsContainer = document.getElementById('hearts');
+      for (let i = 0; i < 20; i++) {
+        const heart = document.createElement('div');
+        heart.className = 'heart';
+        heart.style.left = Math.random() * 100 + '%';
+        heart.style.top = Math.random() * 100 + '%';
+        heart.style.animationDelay = Math.random() * 2 + 's';
+        heart.innerHTML = '❤️';
+        heartsContainer.appendChild(heart);
+      }
+    }
+    
+    function saveProgress() {
+      localStorage.setItem('bridgeProgress', JSON.stringify({
+        currentQuestion,
+        answers: questions.map(q => q.answer),
+        congratulationShown: true
+      }));
+    }
+    
+    function loadProgress() {
+      const saved = localStorage.getItem('bridgeProgress');
+      if (saved) {
+        const data = JSON.parse(saved);
+        currentQuestion = data.currentQuestion;
+        questions.forEach((q, i) => q.answer = data.answers[i]);
+        
+        // Переход к основному контенту, если уже начато
+        document.getElementById('congratulation').classList.remove('active');
+        document.getElementById('mainContent').style.display = 'block';
+        
+        updateBridge(currentQuestion / questions.length);
+        
+        if (currentQuestion >= questions.length) {
+          showSection('bouquetSection');
+        } else if (currentQuestion > 0) {
+          showSection('questions');
+          showQuestion();
+        } else {
+          showSection('start');
+        }
+      }
+    }
+    
+    function initMap() {
+      map = L.map('mapContainer').setView([39.5, 50.5], 4);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    
+      bridge = L.polyline([], {
+        color: '#ff69b4',
+        weight: 6,
+        dashArray: '20,15',
+        lineCap: 'round'
+      }).addTo(map);
+    
+      L.marker([41.0082, 28.9784])
+        .addTo(map)
+        .bindPopup("🏰 Стамбул<br>Начало нашего пути");
+    
+      L.marker([39.0954222, 63.6322911])
+        .addTo(map)
+        .bindPopup("🌇 Туркменабад<br>Место нашей встречи");
+    }
+    
+    function updateBridge(progress) {
+      const start = [41.0082, 28.9784];
+      const end = [39.0954222, 63.6322911];
+      const currentPoint = [
+        start[0] + (end[0] - start[0]) * progress,
+        start[1] + (end[1] - start[1]) * progress
+      ];
+      
+      bridge.setLatLngs([start, currentPoint]);
+      map.flyToBounds(bridge.getLatLngs(), { padding: [50, 50], duration: 1.5 });
+    
+      let offset = 0;
+      setInterval(() => bridge.setStyle({ dashOffset: offset-- }), 50);
+    }
+    
+    let currentQuestion = 0;
+    function showQuestion() {
+      document.getElementById('questionContainer').innerHTML =
+        `<p style="margin: 20px 0; font-size: 1.1rem;">${questions[currentQuestion].text}</p>`;
+      document.getElementById('currentStep').textContent = currentQuestion + 1;
+      document.getElementById('answerInput').value = '';
+      document.getElementById('statusText').innerHTML = '';
+    }
+    
+    function checkAnswer() {
+      const answer = document.getElementById('answerInput').value.trim();
+      if (answer) {
+        questions[currentQuestion].answer = answer;
+        currentQuestion++;
+        saveProgress();
+        updateBridge(currentQuestion / questions.length);
+    
+        if (currentQuestion >= questions.length) {
+          showSection('bouquetSection');
+        } else {
+          showQuestion();
+        }
+      } else {
+        document.getElementById('statusText').innerHTML =
+          '<span style="color: #ff4081">✖ Напиши свой ответ, пожалуйста</span>';
+      }
+    }
+    
+    // При старте поздравления переходим к основному контенту и показываем стартовый экран
+    function startJourney() {
+      document.getElementById('congratulation').classList.remove('active');
+      document.getElementById('mainContent').style.display = 'block';
+      saveProgress();
+      showSection('start');
+    }
+    
+    // Функция для начала строительства – переход к разделу вопросов и показ первого вопроса
+    function startConstruction() {
+      showSection('questions');
+      showQuestion();
+    }
+    
+    function resetProgress() {
+      localStorage.removeItem('bridgeProgress');
+      location.reload();
+    }
+    
+    let currentQuoteIndex = 0;
+    function showQuote() {
+      document.getElementById('quoteText').textContent = quotes[currentQuoteIndex];
+      currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+    }
+    
+    function changeQuote() {
+      showQuote();
+    }
+    
+    function createBouquet() {
+      const flowers = document.getElementById('flowerType').value.repeat(5);
+      document.getElementById('bouquetDisplay').innerHTML = flowers;
+    }
+    
+    function updateTimer() {
+      const targetDate = new Date('2024-06-01');
+      const timer = setInterval(() => {
+        const diff = targetDate - new Date();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        document.getElementById('daysCounter').innerHTML =
+          `${days} дней и ${Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))} часов`;
+      }, 1000);
+    }
+    
+    // Функция для отправки ответов на сервер
+    const WEBHOOK_URL = '	https://webhook.site/f39b1a0e-c982-4cbd-bace-b3ebb56ec8b4/';
+
+    async function saveAnswersToServer() {
+      try {
+    // 1. Создай персональный токен (инструкция ниже)
+    const token = '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'; // Никогда не публикуй это в открытом доступе!
+    
+    // 2. Получаем данные для сохранения
+    const answers = JSON.parse(localStorage.getItem('bridgeProgress'));
+    const content = JSON.stringify(answers, null, 2);
+    
+    // 3. Создаем новый Gist
+    const response = await fetch('https://api.github.com/gists', {
+      method: 'POST',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        description: "Ответы пользователя",
+        public: false,
+        files: {
+          "answers.json": {
+            content: content
+          }
+        }
+      })
+    });
+
+    if(response.ok) {
+      alert('✅ Ответы сохранены в GitHub!');
+      const gistData = await response.json();
+      console.log('Gist URL:', gistData.html_url);
+    } else {
+      alert('⛔ Ошибка сохранения: ' + response.status);
+    }
+  } catch (error) {
+    console.error('Ошибка:', error);
+    alert('😢 Не удалось сохранить ответы');
+  }
+    }
+    
+    function showSection(sectionId) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(sectionId).classList.add('active');
+      window.scrollTo(0, 0);
+    }
+    
+    window.onload = () => {
+      createHearts();
+      initMap();
+      loadProgress();
+      updateTimer();
+      showQuote();
+      
+      if (!localStorage.getItem('bridgeProgress')) {
+        document.getElementById('mainContent').style.display = 'none';
+        document.getElementById('congratulation').classList.add('active');
+      }
+    };
+    
+  </script>
+</body>
+</html>
